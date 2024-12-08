@@ -69,10 +69,11 @@ export class CrudService {
   addoffre(offre:Offre){ // envoie une requête HTTP POST vers une URL qui se trouve à l'adresse this.apiUrl+"/offre"
     return this.http.post<any>(this.apiUrl+"/offre", offre,httpOptions);
   }
-  updateOffre(id:number,offre: Offre) {
-    const url = `${this.apiUrl+"/offre"}/${id}`
-    return this.http.put<any>(url, offre);
+  updateOffre(id: number, offre: any): Observable<any> {
+    const url = `${this.apiUrl}/offre/${id}`;
+    return this.http.put(url, offre, { headers: new HttpHeaders({ 'Content-Type': 'application/json' }) });
   }
+  
   findOffreById(id : number): Observable<Offre> {
     const url = `${this.apiUrl + "/offre"}/${id}`;
     return this.http.get<Offre>(url,httpOptions)
@@ -84,11 +85,22 @@ export class CrudService {
     const url =`${this.apiUrl+"/offre"}/${id}` 
     return this.http.delete(url , httpOptions)
   }
-  userDetails(){
-    let token:any=localStorage.getItem('myToken');
-    let decodeToken= this.helper.decodeToken(token);
-     return decodeToken.data;
-   }
+  userDetails() {
+    const token = localStorage.getItem('myToken'); // Fetch the token from localStorage
+    if (!token) {
+      console.error('No token found in localStorage.');
+      return null; // Handle missing token
+    }
+  
+    try {
+      const decodeToken = this.helper.decodeToken(token); // Decode the token
+      console.log('Decoded Token:', decodeToken); // Debug the decoded token structure
+      return decodeToken.data || decodeToken; // Return the `data` field or fallback to the full token
+    } catch (error) {
+      console.error('Error decoding token:', error); // Log any decoding errors
+      return null; // Handle invalid or malformed tokens
+    }
+  }
    onDeletecontact(id : number){
     const url =`${this.apiUrl+"/contact"}/${id}` 
     return this.http.delete(url , httpOptions)

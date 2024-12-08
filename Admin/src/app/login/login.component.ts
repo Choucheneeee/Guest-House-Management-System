@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NgToastService } from 'ng-angular-popup';
-import { Admin } from '../Model/Admin.model';
 import { CrudService } from '../service/crud.service';
 
 @Component({
@@ -11,76 +10,71 @@ import { CrudService } from '../service/crud.service';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  loginForm: FormGroup
-    constructor(
-      private fb: FormBuilder,
-      private service:CrudService,
-      private router:Router,private toast:NgToastService
-    ) { 
-      let formControls = {
-        email: new FormControl('',[
-          Validators.required,
-          Validators.email
-          
-        ]),
-        mdp: new FormControl('',[
-          Validators.required,
-         
-        ])
-      }
-  
-      this.loginForm = this.fb.group(formControls)
-    }
-  
-    get email() { return this.loginForm.get('email') }
-    get mdp() { return this.loginForm.get('mdp') }
-   
-    login() {
-      let data = this.loginForm.value;
-      console.log(data);
-      let admin = new Admin(
-       null, null,null,data.email,data.mdp,null);
-      console.log(admin);
-      if (
-    
-        data.email == 0 ||
-        data.mdp == 0
-      )
-      {
-        this.toast.info({
-          detail: 'Error Message',
-          summary: 'Remplir votre champs',
-        });
-      } else {
-    
-        this.service.loginAdmin(admin).subscribe(
-          res=>{
-            console.log(res);
-            let token = res.token;
-            localStorage.setItem("myToken",token);
-            localStorage.setItem("role",res.role);
-            this.router.navigate(['home']);
-          },
-          err=>{
-            console.log(err);
-            this.toast.error({
-              detail: 'Error Message',
-              summary: 'Probléme de Serveur',
-            });
-            
-          }
-        )
-        
-      }
-    }
+  loginForm: FormGroup;
 
-  ngOnInit(): void {
-    let isLoggedIn = this.service.isLoggedIn();
-      
-  
-    if (isLoggedIn) {
-      this.router.navigate(['/']);
-    } 
+  constructor(
+    private fb: FormBuilder,
+    private service: CrudService,
+    private router: Router,
+    private toast: NgToastService
+  ) {
+    this.loginForm = this.fb.group({
+      email: new FormControl('', [Validators.required, Validators.email]),
+      mdp: new FormControl('', [Validators.required]),
+    });
   }
 
+  get email() {
+    return this.loginForm.get('email');
+  }
+
+  get mdp() {
+    return this.loginForm.get('mdp');
+  }
+
+  login() {
+    if (this.loginForm.invalid) {
+      this.toast.info({
+        detail: 'Error Message',
+        summary: 'Please fill in all required fields.',
+      });
+      return;
+    }
+
+    const data = this.loginForm.value;
+    this.service.loginAdmin({ email: data.email, mdp: data.mdp }).subscribe(
+      (res) => {
+        console.log('Login response:', res);
+
+        // Save token and role
+        localStorage.setItem('myToken', res.token);
+        localStorage.setItem('role', res.admin.role);
+
+        this.toast.success({
+          detail: 'Success Message',
+          summary: 'Login successful!',
+        });
+        this.router.navigate(['home']);
+      },
+      (err) => {
+        if (err.status === 401) {
+          this.toast.error({
+            detail: 'Error Message',
+            summary: 'Invalid email or password.',
+          });
+        } else {
+          this.toast.error({
+            detail: 'Error Message',
+            summary: 'Server unavailable. Please try again later.',
+          });
+        }
+      }
+    );
+  }
+
+  ngOnInit(): void {
+    if (this.service.isLoggedIn()) {
+      this.router.navigate(['/']);
+    }
+  }
 }
