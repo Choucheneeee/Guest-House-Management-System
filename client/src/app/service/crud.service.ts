@@ -47,50 +47,23 @@ export class CrudService {
   }
 
 
-  loginclient(client: Client) {
-    this.loginClientFromApi(client).subscribe(
-      (data) => {
-        console.log('API Response:', data);
-  
-        // Decode the token
-        let decoded: any;
-        try {
-          decoded = jwt_decode(data.token);
-          console.log('Decoded Token:', decoded);
-  
-          // Validate the token structure
-          if (decoded?.data) {
-            this.loginInClient(decoded.data);
-            this._clientConnect.next(); // Emit event if needed
-          } else {
-            console.error('Decoded token does not contain "data" field.');
-          }
-        } catch (error) {
-          console.error('Error decoding token:', error);
-        }
-      },
-      (error) => {
-        console.error('Login API Error:', error);
-      }
-    );
+  loginclient(client:Client){
+    this.loginClientFromApi(client).subscribe((data)=>{
+      console.log(data)
+      var decoded:any = jwt_decode(data.token);
+ 
+      console.log(decoded);
+      this.loginInClient(decoded.data)
+      this._clientConnect.next()
+    })
   }
-  
-  loginInClient(data: any) {
-    if (!data || !data.id) {
-      console.error('Invalid data received:', data);
-      return;
-    }
-  
-    // Save client ID to localStorage
-    localStorage.setItem("idC", data.id);
-  
-    // Set connection status and navigate
-    this.isConnected = true;
-    this.router.navigate(['/offre']).then(() => {
+  loginInClient(data:any){
+    localStorage.setItem("idC",data.id)
+    this.isConnected=true
+    this.router.navigate(['/offre']).then(()=>{
       window.location.reload();
-    });
+    })
   }
-  
   addclient(client:Client){ // envoie une requête HTTP POST vers une URL qui se trouve à l'adresse this.apiUrl+"/contact"
     return this.http.post<any>(this.apiUrl+"/client", client,httpOptions);
   }
